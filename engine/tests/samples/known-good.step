@@ -1,0 +1,23 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION((''),'2;1');
+FILE_NAME('demo-part.step','2026-09-25T00:00:00',('TPT'),('TPT Solutions'),
+  'TPT CAD Format','','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));
+ENDSEC;
+DATA;
+#1 = APPLICATION_PROTOCOL_DEFINITION('international standard',
+  'automotive_design',2000,#2);
+#2 = APPLICATION_CONTEXT('core data for automotive mechanical design processes');
+#3 = CARTESIAN_POINT('',(0.,0.,0.));
+#4 = DIRECTION('',(0.,0.,1.));
+#5 = DIRECTION('',(1.,0.,0.));
+#6 = AXIS2_PLACEMENT_3D('',#3,#4,#5);
+#7 = CARTESIAN_POINT('',(10.,0.,0.));
+#8 = VECTOR('',#9,10.);
+#9 = DIRECTION('',(1.,0.,0.));
+#10 = LINE('',#7,#8);
+#11 = CIRCLE('',#6,5.);
+#12 = CARTESIAN_POINT('',(0.,0.,25.4));
+ENDSEC;
+END-ISO-10303-21;

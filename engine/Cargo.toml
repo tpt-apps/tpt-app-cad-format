@@ -1,0 +1,16 @@
+[package]
+name = "tpt-cad-engine"
+version = "0.1.0"
+edition = "2021"
+description = "STEP/IGES structural validation and (Pro) batch conversion adapter over tpt-io-standards. Pure Rust, no UI deps, host-testable."
+publish = false
+
+[features]
+default = []
+# Pro edition capabilities: cross-format conversion and batch tooling.
+# Compiled out of the free WASM build to keep the payload small.
+pro = []
+
+[dependencies]
+# Generic ISO-10303-21 (STEP Physical File) parser + entity graph.
+tpt-io-ifc = { path = "D:/Programming/1PRODUCTION/Open Source/tpt-io-standards/crates/tpt-io-ifc" }

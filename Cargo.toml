@@ -1,0 +1,55 @@
+[package]
+name = "tpt-app-cad-format"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+members = [".", "engine"]
+resolver = "2"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+# Pro edition (paid desktop build): batch format conversion, detailed
+# geometry-issue reports, folder-watch automation. The free WASM build
+# compiles without it; `--features pro` is Pro.
+pro = ["tpt-cad-engine/pro"]
+
+[dependencies]
+tpt-appfront-core = { path = "D:/Programming/1PRODUCTION/Open Source/tpt-appfront/crates/tpt-appfront-core" }
+tpt-appfront-dom = { path = "D:/Programming/1PRODUCTION/Open Source/tpt-appfront/crates/tpt-appfront-dom" }
+tpt-cad-engine = { path = "engine" }
+# Pinned to the installed wasm-bindgen CLI version — the CLI rejects wasm
+# built against a different schema version. Bump both together.
+wasm-bindgen = "=0.2.128"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Window",
+    "Location",
+    "Element",
+    "Node",
+    "HtmlElement",
+    "HtmlInputElement",
+    "HtmlAnchorElement",
+    "HtmlCollection",
+    "CssStyleDeclaration",
+    "Event",
+    "EventTarget",
+    "MouseEvent",
+    "DomRect",
+    "File",
+    "FileList",
+    "FileReader",
+] }
+console_error_panic_hook = "0.1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

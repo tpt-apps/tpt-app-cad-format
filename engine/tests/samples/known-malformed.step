@@ -1,0 +1,18 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION((''),'2;1');
+FILE_NAME('broken.step','2026-09-25T00:00:00',('TPT'),('TPT Solutions'),
+  'TPT CAD Format','','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));
+ENDSEC;
+DATA;
+#1 = CARTESIAN_POINT('',(0.,0.,0.));
+#2 = LINE('',#1,#99);
+#3 = DIRECTION('',(0.,0.,0.));
+#4 = CARTESIAN_POINT('',(1.,2.,3.));
+#5 = CIRCLE('',#1,0.);
+#6 = VECTOR('',#3,-2.5);
+#7 = B_SPLINE_CURVE_WITH_KNOTS('',3,(#1,#1,#1),.UNSPECIFIED.,.F.,.F.,(4,4),
+  (0.,1.),.UNSPECIFIED.);
+ENDSEC;
+END-ISO-10303-21;
