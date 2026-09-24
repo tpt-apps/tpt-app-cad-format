@@ -24,8 +24,16 @@ that changes, update here too (and vice versa).
 
 ## File to upload
 
-Not built yet. Once packaged, this will be the Pro exe/zip produced by the
-app's `build.ps1 -Pro` (or equivalent) — see `todo.md`.
+```
+release\tpt-cad-format-pro.exe
+```
+
+Produced by `./build.ps1 -Pro` (stop any `trunk serve` session first — it
+races the Pro build for `dist/`). The exe is standalone: the web bundle is
+embedded and extracted to temp on first launch, so the Gumroad download is
+one file. Verified: launches on Windows, window title "TPT CAD Format Pro",
+Pro UI (batch tools + folder watch) renders, WebView2 serves the embedded
+bundle.
 
 ## Product name
 
