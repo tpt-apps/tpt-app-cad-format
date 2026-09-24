@@ -1,0 +1,23 @@
+TPT CAD Format sample: IGES known-malformed fixture                     S      1
+     This malformed file also uses all five IGES sections, ending with TS      2
+1H,,1H;,8HTPT-DEMO,19Hknown-malformed.igs,9HTPT-Tools,5H1.0.0,32,38,6,30G      1
+8,15,8HTPT-DEMO,1.0,2,2HMM,1,0.01,100.0,3HMSG,3HTPT,1,4HNone,15H20260925G      2
+.120000;                                                                G      3
+     116       1       0       0       0       0       0       000000000D      1
+     116       1       1       1       0                POINT          1D      2
+     110       2       0       0       0       0       0       000000000D      3
+     110       1       1       1       0                LINE           1D      5
+     100       3       0       0       0       0       0       000000000D      6
+     101       1       1       1       0                ARC            1D      7
+     116      99       0       0       0       0       0       000000000D      8
+     116       1       1       1       0                POINT          2D      9
+     108       4       0       0       0       0       0       000000000D     10
+     108       1       1       3       0                PLANE          1D     11
+     110       5       0       0       0       0       0       000000000D     12
+     110       1       1       1       0                LINE           2D     13
+     116       150.0,50.0,0.0,0;                                        P      1
+     110       310.0,10.0,0.0,10.0,10.0,0.0;                            P      2
+     100       50.0,0.0,0.0,10.0,0.0,0.0,10.0;                          P      3
+     108       90.0,0.0,1.0,-5.0;                                       P      4
+     110      120.0,0.0,0.0,1.0,1.0,1.0;                                P      5
+       5       2      10       4       1                                T      1

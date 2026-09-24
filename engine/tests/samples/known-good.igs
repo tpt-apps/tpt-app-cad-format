@@ -1,0 +1,18 @@
+TPT CAD Format sample: IGES known-good fixture                          S      1
+         This known-good file uses all five IGES sections, ending with TS      2
+1H,,1H;,8HTPT-DEMO,14Hknown-good.igs,9HTPT-Tools,5H1.0.0,32,38,6,308,15,G      1
+8HTPT-DEMO,1.0,2,2HMM,1,0.01,100.0,3HMSG,3HTPT,1,4HNone,15H20260925.1200G      2
+00;                                                                     G      3
+     116       1       0       0       0       0       0       000000000D      1
+     116       1       1       1       0                POINT          1D      2
+     110       2       0       0       0       0       0       000000000D      3
+     110       1       1       1       0                LINE           1D      4
+     100       3       0       0       0       0       0       000000000D      5
+     100       1       1       1       0                ARC            1D      6
+     314       4       0       0       0       0       0       000000000D      7
+     314       1       1       1       0                RED            1D      8
+     116       150.0,50.0,0.0,0;                                        P      1
+     110       30.0,0.0,0.0,100.0,50.0,25.0;                            P      2
+     100       50.0,0.0,0.0,10.0,0.0,0.0,10.0;                          P      3
+     314       77HA,B;CDE,1.0,0.0,0.0;                                  P      4
+       2       3       8       4       1                                T      1

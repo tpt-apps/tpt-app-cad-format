@@ -23,6 +23,24 @@ const STORE_URL: &str = "https://tptsolutions.co.nz/tools/cad-format";
 enum Msg {
     /// Open the Pro store link (protocol-aware: browser tab vs desktop IPC).
     OpenStore,
+    /// Pro, desktop: native multi-file dialog → detailed .txt reports.
+    #[cfg(feature = "pro")]
+    PickValidate,
+    /// Pro, desktop: native multi-file dialog → batch conversion to STEP.
+    #[cfg(feature = "pro")]
+    PickConvertStep,
+    /// Pro, desktop: native multi-file dialog → batch conversion to IGES.
+    #[cfg(feature = "pro")]
+    PickConvertIges,
+    /// Pro, desktop: folder-watch path typed into the watch input.
+    #[cfg(feature = "pro")]
+    WatchPath(String),
+    /// Pro, desktop: start the native polling folder watch.
+    #[cfg(feature = "pro")]
+    WatchStart,
+    /// Pro, desktop: stop the folder watch.
+    #[cfg(feature = "pro")]
+    WatchStop,
 }
 
 thread_local! {
@@ -34,6 +52,11 @@ thread_local! {
     static STATUS: RefCell<Option<Signal<String>>> = const { RefCell::new(None) };
     /// Shared outcome signal (created in mount_app).
     static OUTCOME: RefCell<Option<Signal<Option<ReportView>>>> = const { RefCell::new(None) };
+    /// Pro: the folder-watch path typed into the input, and the live state.
+    #[cfg(feature = "pro")]
+    static WATCH_PATH: RefCell<String> = const { RefCell::new(String::new()) };
+    #[cfg(feature = "pro")]
+    static WATCH_STATE: RefCell<Option<Signal<(bool, String)>>> = const { RefCell::new(None) };
 }
 
 pub fn mount_app(container: &web_sys::Element) -> Result<(), JsValue> {
@@ -51,6 +74,30 @@ pub fn mount_app(container: &web_sys::Element) -> Result<(), JsValue> {
     // 1. Static shell — mounted exactly once.
     let dispatch: Rc<dyn Fn(Msg)> = Rc::new(|msg| match msg {
         Msg::OpenStore => open_external(STORE_URL),
+        #[cfg(feature = "pro")]
+        Msg::PickValidate => ipc_post("pick_validate", None),
+        #[cfg(feature = "pro")]
+        Msg::PickConvertStep => ipc_post("pick_convert", Some("step")),
+        #[cfg(feature = "pro")]
+        Msg::PickConvertIges => ipc_post("pick_convert", Some("iges")),
+        #[cfg(feature = "pro")]
+        Msg::WatchPath(path) => WATCH_PATH.with(|cell| *cell.borrow_mut() = path),
+        #[cfg(feature = "pro")]
+        Msg::WatchStart => {
+            let path = WATCH_PATH.with(|cell| cell.borrow().clone());
+            let started = is_desktop();
+            if started {
+                ipc_post_with_path("watch_start", &path);
+            }
+            set_watch_state(started && !path.is_empty(), path);
+        }
+        #[cfg(feature = "pro")]
+        Msg::WatchStop => {
+            if is_desktop() {
+                ipc_post("watch_stop", None);
+            }
+            set_watch_state(false, String::new());
+        }
     });
     let root = tpt_appfront_dom::mount(container, &shell_tree(), Rc::clone(&dispatch))?;
     std::mem::forget(root);
@@ -88,6 +135,21 @@ pub fn mount_app(container: &web_sys::Element) -> Result<(), JsValue> {
         .query_selector(".cad-upload")?
         .ok_or_else(|| JsValue::from_str("upload placeholder missing"))?;
     build_upload_row(&document, &upload_el)?;
+
+    // 5. (Pro) reactive watch-state section.
+    #[cfg(feature = "pro")]
+    {
+        let watch: Signal<(bool, String)> = Signal::new((false, String::new()));
+        WATCH_STATE.with(|cell| *cell.borrow_mut() = Some(watch.clone()));
+        if let Some(watch_el) = container.query_selector(".cad-watchstate")? {
+            let handle = tpt_appfront_dom::render(
+                &watch_el,
+                Rc::new(move || watch_state_view(Some(watch.get()))),
+                dispatch.clone(),
+            )?;
+            std::mem::forget(handle);
+        }
+    }
 
     Ok(())
 }
@@ -129,6 +191,8 @@ fn shell_tree() -> UITree<Msg> {
 
         #[cfg(not(feature = "pro"))]
         upsell_card(c);
+        #[cfg(feature = "pro")]
+        pro_cards(c);
     })
 }
 
@@ -157,6 +221,90 @@ fn upsell_card(c: &mut tpt_appfront_core::ContainerBuilder<Msg>) {
             .class("cad-btn cad-primary");
     })
     .class("cad-card cad-upsell");
+}
+
+/// Pro build: batch + folder-watch controls (desktop shell implements the
+/// filesystem side over IPC; OS notifications report progress).
+#[cfg(feature = "pro")]
+fn pro_cards(c: &mut tpt_appfront_core::ContainerBuilder<Msg>) {
+    c.container(|card| {
+        card.heading(3, "Batch tools");
+        text_span(
+            card,
+            "Pick STEP/IGES files anywhere on disk — the desktop app processes them natively \
+             and shows an OS notification when finished.",
+            "cad-hint",
+        );
+        card.container(|row| {
+            row.button("Validate files → detailed reports")
+                .on_click(Msg::PickValidate)
+                .class("cad-btn");
+            row.button("Convert files → STEP")
+                .on_click(Msg::PickConvertStep)
+                .class("cad-btn");
+            row.button("Convert files → IGES")
+                .on_click(Msg::PickConvertIges)
+                .class("cad-btn");
+        })
+        .class("cad-btnrow");
+        text_span(
+            card,
+            "Conversion maps points, lines, arcs and circles between the formats; entity \
+             types without a counterpart are listed in the written report rather than \
+             silently dropped.",
+            "cad-hint",
+        );
+    })
+    .class("cad-card");
+
+    c.container(|card| {
+        card.heading(3, "Folder watch");
+        text_span(
+            card,
+            "Watch a folder: every STEP/IGES file that appears or changes is validated and a \
+             detailed `<name>.cad-report.txt` is written beside it.",
+            "cad-hint",
+        );
+        card.input("").on_input(Msg::WatchPath).class("cad-input").attr(
+            "placeholder",
+            "C:\\cad\\inbox",
+        );
+        card.container(|row| {
+            row.button("Start watching").on_click(Msg::WatchStart).class("cad-btn cad-primary");
+            row.button("Stop").on_click(Msg::WatchStop).class("cad-btn");
+        })
+        .class("cad-btnrow");
+        card.button("Check the hub for updates")
+            .on_click(Msg::OpenStore)
+            .class("cad-btn");
+    })
+    .class("cad-card");
+
+    c.container(|_| {}).class("cad-watchstate");
+}
+
+/// Render the watch-state section (Pro only): empty when not watching.
+#[cfg(feature = "pro")]
+fn watch_state_view(state: Option<(bool, String)>) -> UITree<Msg> {
+    UITree::container(|c| match state {
+        Some((true, path)) if !path.is_empty() => {
+            text_span(
+                c,
+                format!("Watching {path} — reports appear beside new files."),
+                "cad-watch-on",
+            );
+        }
+        _ => {}
+    })
+}
+
+#[cfg(feature = "pro")]
+fn set_watch_state(watching: bool, path: String) {
+    WATCH_STATE.with(|cell| {
+        if let Some(state) = cell.borrow().as_ref() {
+            state.set((watching, path));
+        }
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -594,44 +742,85 @@ fn fact(grid: &mut tpt_appfront_core::ContainerBuilder<Msg>, label: &str, value:
 }
 
 // ---------------------------------------------------------------------------
-// Pro store link (protocol-aware)
+// Desktop IPC + Pro store link (protocol-aware)
 // ---------------------------------------------------------------------------
 
-/// Open an external URL: desktop shells route through the `__appfront` IPC
-/// (`open_external`) so the webview doesn't navigate away; browsers open a
-/// new tab. Sniffs the hosting context at runtime — it's the host that
+/// True when running inside the desktop webview shell (custom `app:`
+/// protocol). Sniffs the hosting context at runtime — it's the host that
 /// matters, not the build (same rule as fea-lite).
-fn open_external(url: &str) {
+fn is_desktop() -> bool {
+    web_sys::window()
+        .and_then(|window| window.location().protocol().ok())
+        .map(|protocol| protocol == "app:")
+        .unwrap_or(false)
+}
+
+/// Fire-and-forget IPC into the desktop host. The bridge is web→native only;
+/// the host reports progress through OS notifications.
+#[cfg(feature = "pro")]
+fn ipc_post(action: &str, target: Option<&str>) {
+    let params = js_sys::Object::new();
+    if let Some(target) = target {
+        let _ = js_sys::Reflect::set(
+            &params,
+            &JsValue::from_str("target"),
+            &JsValue::from_str(target),
+        );
+    }
+    post_to_native(action, &params);
+}
+
+#[cfg(feature = "pro")]
+fn ipc_post_with_path(action: &str, path: &str) {
+    let params = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(
+        &params,
+        &JsValue::from_str("path"),
+        &JsValue::from_str(path),
+    );
+    post_to_native(action, &params);
+}
+
+#[cfg(feature = "pro")]
+fn post_to_native(action: &str, params: &js_sys::Object) {
     let Some(window) = web_sys::window() else {
         return;
     };
-    let is_desktop = window
-        .location()
-        .protocol()
-        .map(|p| p == "app:")
-        .unwrap_or(false);
-    if is_desktop {
-        let host = js_sys::Reflect::get(&window, &JsValue::from_str("__appfront")).ok();
-        let post = host
-            .as_ref()
-            .and_then(|host| js_sys::Reflect::get(host, &JsValue::from_str("post")).ok())
-            .and_then(|post| post.dyn_into::<js_sys::Function>().ok());
-        if let (Some(post), Some(host)) = (post, host.clone()) {
-            let params = js_sys::Object::new();
-            let _ = js_sys::Reflect::set(
-                &params,
-                &JsValue::from_str("url"),
-                &JsValue::from_str(url),
-            );
-            let _ = post.call2(
-                &host,
-                &JsValue::from_str("open_external"),
-                &params.into(),
-            );
+    let host = js_sys::Reflect::get(&window, &JsValue::from_str("__appfront")).ok();
+    let post = host
+        .as_ref()
+        .and_then(|host| js_sys::Reflect::get(host, &JsValue::from_str("post")).ok())
+        .and_then(|post| post.dyn_into::<js_sys::Function>().ok());
+    if let (Some(post), Some(host)) = (post, host) {
+        let _ = post.call2(&host, &JsValue::from_str(action), params);
+    }
+}
+
+/// Open an external URL: desktop shells route through the `__appfront` IPC
+/// (`open_external`) so the webview doesn't navigate away; browsers open a
+/// new tab.
+fn open_external(url: &str) {
+    if is_desktop() {
+        #[cfg(feature = "pro")]
+        {
+            ipc_post_open_external(url);
+            return;
+        }
+        #[cfg(not(feature = "pro"))]
+        {
             return;
         }
     }
-    let _ = window.open_with_url_and_target(url, "_blank");
+    if let Some(window) = web_sys::window() {
+        let _ = window.open_with_url_and_target(url, "_blank");
+    }
+}
+
+#[cfg(all(feature = "pro", target_arch = "wasm32"))]
+fn ipc_post_open_external(url: &str) {
+    let params = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&params, &JsValue::from_str("url"), &JsValue::from_str(url));
+    post_to_native("open_external", &params);
 }
 
 // ---------------------------------------------------------------------------
@@ -722,6 +911,11 @@ const BASE_CSS: &str = r#"
 .cad-finding.cad-sev-warning{border-left:3px solid var(--cad-warn)}
 .cad-finding.cad-sev-info{border-left:3px solid var(--cad-info)}
 .cad-grid{width:100%;border-collapse:collapse;font-size:.88rem}
+.cad-btnrow{display:flex;gap:9px;flex-wrap:wrap}
+.cad-input{width:100%;max-width:420px;padding:8px 10px;border:1px solid var(--cad-border);border-radius:8px;background:var(--cad-bg);color:var(--cad-fg);font:inherit;margin-top:8px}
+.cad-input:focus{outline:none;border-color:var(--cad-accent);box-shadow:0 0 0 3px var(--cad-accent-soft)}
+.cad-watch-on{color:var(--cad-ok);font-size:.88rem;font-weight:600;min-height:1.2em}
+.cad-watchstate{min-height:1.2em}
 .cad-kind{font-weight:700;font-size:.88rem}
 .cad-entity{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem;background:var(--cad-panel);border-radius:6px;padding:2px 7px}
 .cad-line{color:var(--cad-muted);font-size:.78rem}

@@ -51,27 +51,27 @@ impl CadFormat {
     }
 
     fn looks_like_iges(bytes: &[u8]) -> bool {
-        // First record: section letter 'S' at column 73 (index 72) and
-        // sequence number 1 at columns 74-80 (indices 73..80).
-        if bytes.len() < 80 {
+        // Examine only the first few records (Start sections are free text,
+        // files can be megabytes).
+        let head = String::from_utf8_lossy(&bytes[..bytes.len().min(400)]);
+        let mut lines = head.lines();
+        // First record: section letter 'S' at column 73 (index 72) and a
+        // sequence number starting at 1 in columns 74-80.
+        let Some(first) = lines.next() else { return false };
+        let f = first.as_bytes();
+        if f.len() != 80 || f[72] != b'S' {
             return false;
         }
-        let record = &bytes[..80];
-        if record[72] != b'S' {
-            return false;
-        }
-        if !record[73..80].iter().all(|&b| b == b' ' || b == b'1') || !record[73..80].contains(&b'1')
+        if !f[73..80].iter().all(|&b| b == b' ' || b.is_ascii_digit())
+            || !f[73..80].contains(&b'1')
         {
             return false;
         }
-        // The Start section is free text; confirm the layout on a later
-        // record too (G/D/P section letter + sequence) before committing.
-        for start in [80usize, 160, 240] {
-            if bytes.len() > start + 73 {
-                let letter = bytes[start + 72];
-                if matches!(letter, b'S' | b'G' | b'D' | b'P' | b'T') {
-                    return true;
-                }
+        // Confirm the layout on a later record (G/D/P section letter + seq).
+        for line in lines.take(3) {
+            let l = line.as_bytes();
+            if l.len() == 80 && matches!(l[72], b'S' | b'G' | b'D' | b'P' | b'T') {
+                return true;
             }
         }
         false

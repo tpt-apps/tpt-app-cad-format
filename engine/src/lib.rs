@@ -13,6 +13,7 @@
 
 pub mod iges;
 pub mod model;
+pub mod report;
 pub mod step;
 
 #[cfg(feature = "pro")]

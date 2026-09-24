@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [workspace]
-members = [".", "engine"]
+members = [".", "engine", "desktop"]
 resolver = "2"
 
 [lib]
@@ -57,3 +57,8 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+
+# The desktop shell is a native binary; keep its codegen normal even in the
+# same workspace (the `release` profile above applies to the wasm lib build).
+[profile.release.package.tpt-cad-desktop]
+opt-level = 3

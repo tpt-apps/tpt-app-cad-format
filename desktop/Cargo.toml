@@ -1,0 +1,26 @@
+[package]
+name = "tpt-cad-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "TPT CAD Format Pro - desktop webview shell hosting the appfront DOM bundle, with native batch conversion and folder-watch automation."
+publish = false
+
+[[bin]]
+name = "tpt-cad-format-pro"
+path = "src/main.rs"
+
+[dependencies]
+tpt-appfront-webview = { path = "D:/Programming/1PRODUCTION/Open Source/tpt-appfront/crates/tpt-appfront-webview" }
+# The Pro engine: validation + cross-format conversion, run natively with
+# full filesystem access.
+tpt-cad-engine = { path = "../engine", features = ["pro"] }
+# Embeds `../dist` into the exe at compile time so the shipped binary is a
+# genuinely standalone, single-file download — no separate dist/ folder the
+# customer could unzip apart from it or move the exe away from.
+include_dir = "0.7"
+# Opens tptsolutions.co.nz links in the OS default browser in response to the
+# `open_external` IPC action — the webview itself has no browser chrome to
+# navigate within.
+open = "5"
+# IPC params from the hosted page arrive as JSON.
+serde_json = "1"
