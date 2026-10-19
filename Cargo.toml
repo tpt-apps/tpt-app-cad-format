@@ -19,8 +19,9 @@ default = []
 pro = ["tpt-cad-engine/pro"]
 
 [dependencies]
-tpt-appfront-core = { path = "D:/Programming/1PRODUCTION/Open Source/tpt-appfront/crates/tpt-appfront-core" }
-tpt-appfront-dom = { path = "D:/Programming/1PRODUCTION/Open Source/tpt-appfront/crates/tpt-appfront-dom" }
+# Sibling checkouts: CI clones these next to this repo (see .github/workflows/ci.yml).
+tpt-appfront-core = { path = "../tpt-appfront/crates/tpt-appfront-core" }
+tpt-appfront-dom = { path = "../tpt-appfront/crates/tpt-appfront-dom" }
 tpt-cad-engine = { path = "engine" }
 # Pinned to the installed wasm-bindgen CLI version — the CLI rejects wasm
 # built against a different schema version. Bump both together.

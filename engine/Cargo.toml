@@ -13,4 +13,4 @@ pro = []
 
 [dependencies]
 # Generic ISO-10303-21 (STEP Physical File) parser + entity graph.
-tpt-io-ifc = { path = "D:/Programming/1PRODUCTION/Open Source/tpt-io-standards/crates/tpt-io-ifc" }
+tpt-io-ifc = { path = "../../tpt-io-standards/crates/tpt-io-ifc" }

@@ -16,6 +16,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      # Path deps resolve to sibling checkouts (../tpt-io-standards), as on a dev machine.
+      - name: Clone sibling path-dependency repos
+        run: git clone --depth 1 https://github.com/tpt-solutions/tpt-io-standards.git ../tpt-io-standards
       - name: Engine tests
         run: cargo test -p tpt-cad-engine --locked
 
@@ -27,6 +30,11 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
+      # Path deps resolve to sibling checkouts (../tpt-appfront, ../tpt-io-standards).
+      - name: Clone sibling path-dependency repos
+        run: |
+          git clone --depth 1 https://github.com/tpt-solutions/tpt-appfront.git ../tpt-appfront
+          git clone --depth 1 https://github.com/tpt-solutions/tpt-io-standards.git ../tpt-io-standards
       - name: Check free WASM build
         run: cargo check --target wasm32-unknown-unknown -p tpt-app-cad-format --locked
       - name: Check Pro WASM build

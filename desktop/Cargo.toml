@@ -10,7 +10,7 @@ name = "tpt-cad-format-pro"
 path = "src/main.rs"
 
 [dependencies]
-tpt-appfront-webview = { path = "D:/Programming/1PRODUCTION/Open Source/tpt-appfront/crates/tpt-appfront-webview" }
+tpt-appfront-webview = { path = "../../tpt-appfront/crates/tpt-appfront-webview" }
 # The Pro engine: validation + cross-format conversion, run natively with
 # full filesystem access.
 tpt-cad-engine = { path = "../engine", features = ["pro"] }
