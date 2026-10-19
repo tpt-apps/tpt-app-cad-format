@@ -92,12 +92,17 @@ preinstalled on both — nothing extra to download.
 
 ## Cover image / thumbnail
 
-Not created yet. A screenshot of the geometry-issue report flagging a real
-problem is the most convincing cover once built. No stock/AI art.
+Screenshots (from the Pro build, sample `known-malformed.step`):
+- `screenshots\cad-format-pro-detailed-report.png` — the detailed
+  geometry-issue report. Best cover: it shows real findings.
+- `screenshots\cad-format-pro-validation.png` — in-app validation results.
+
+No stock/AI art.
 
 ## After publishing
 
-1. Copy the resulting product URL (`https://gum.co/...`).
+1. Copy the resulting product URL (`https://gum.co/...`). Live listing:
+   `https://tpt12.gumroad.com/l/cad-format`.
 2. Paste it into the `gumroadUrl` field of the `cad-format` entry in
    `tpt-electrician-nz-2\src\lib\tpt-apps-registry.ts`, and set `price: '$99'`.
 3. Set `status` to `'live'`.
